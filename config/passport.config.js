@@ -1,6 +1,7 @@
 const passport = require("passport");
 const User = require("../models/user.model");
 const SlackStrategy = require("passport-slack").Strategy;
+const GoogleStrategy = require('passport-google-oauth').OAuthStrategy;
 
 const slack = new SlackStrategy(
   {
@@ -39,5 +40,45 @@ const slack = new SlackStrategy(
 );
 
 passport.use(slack)
+
+
+const google = new GoogleStrategy(
+  {
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrl: "/auth/google",
+  },
+  (accessToken, refreshToken, profile, next) => {
+    User.findOne({ "social.google": profile.id })
+      .then((user) => {
+        if (user) {
+          next(null, user);
+        } else {
+          const newUser = new User({
+            name: profile.displayName,
+            username: profile.user.email.split("@")[0],
+            email: profile.user.email,
+            avatar: profile.user.image_1024,
+            password:
+              profile.provider + Math.random().toString(36).substring(7),
+            social: {
+              slack: profile.id,
+            },
+          });
+
+          newUser
+            .save()
+            .then((user) => {
+              next(null, user);
+            })
+            .catch((err) => next(err));
+        }
+      })
+      .catch((err) => next(err));
+  }
+);
+
+passport.use(google)
+
 
 module.exports = passport.initialize()

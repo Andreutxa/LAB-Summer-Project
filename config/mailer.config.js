@@ -16,7 +16,7 @@ const transport = nodemailer.createTransport(
 module.exports.sendValidationEmail = (email, activationToken, name) => {
 	transport.sendMail({
 		to: email,
-		from: `Tweet hack team <${user}>`,
+		from: `Santillana summer project team <${user}>`,
 		subject: 'Activate your account here!',
 		html: `
 			<h1>Hi ${name}</h1>
